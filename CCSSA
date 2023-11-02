@@ -39,7 +39,7 @@ for i = 1: Max_iter
       if(R2<ST)
           X_new(j,:) = wm*X(j,:).*exp(-j./(rand()*Max_iter));
       else
-          X_new(j,:) = wz*X(j,:) + randn().*ones(1,dim);
+          X_new(j,:) = wz.*X(j,:) + randn().*ones(1,dim);
       end     
     end
    for j = PDNumber+1:pop
@@ -117,6 +117,9 @@ for i = 1: Max_iter
       X(j,:) = X(index(j),:);
    end
    curve(i) = GBestF;
+end
+Best_pos =GBestX;
+Best_score = curve(end);
 end
 Best_pos =GBestX;
 Best_score = curve(end);
