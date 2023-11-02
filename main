@@ -1,0 +1,30 @@
+clear
+clc
+SearchAgents_no=30; 
+Function_name='F1'; 
+Max_iteration=500; 
+[lb,ub,dim,fobj]=Get_Functions_details(Function_name);
+[Best_pos1,Best_score1,SSA_curve1]=CCSSA(SearchAgents_no,Max_iteration,lb,ub,dim,fobj);
+figure('Position',[300   300   660   500])
+func_plot(Function_name);
+title('Parameter space')
+xlabel('x_1');
+ylabel('x_2');
+zlabel([Function_name,'( x_1 , x_2 )'])
+set(gca,'fontname','Times New Roman')
+figure('Position',[300   300   660   500])
+func_plot(Function_name);
+title('Parameter space')
+xlabel('x_1');
+ylabel('x_2');
+zlabel([Function_name,'( x_1 , x_2 )'])
+subplot(1,1,1);
+A3=semilogy(SSA_curve1,'Color','r','linewidth',1.5);
+hold on
+title('Objective space')
+xlabel('Iteration');
+ylabel('Best score obtained so far');
+set(gca,'fontname','Times New Roman')
+axis tight
+grid on
+box on
