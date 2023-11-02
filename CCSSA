@@ -1,0 +1,123 @@
+function [Best_pos,Best_score,curve]=CCSSA(pop,Max_iter,lb,ub,dim,fobj)
+ST = 0.6;
+PD = 0.7;
+PDNumber = round(pop*PD); 
+if(max(size(ub)) == 1)
+   ub = ub.*ones(1,dim);
+   lb = lb.*ones(1,dim);  
+end
+X0=initializationChebyshev(pop,dim,ub,lb);
+X = X0;
+fitness = zeros(1,pop);
+for i = 1:pop
+   fitness(i) =  fobj(X(i,:));
+end
+ [fitness, index]= sort(fitness);
+BestF = fitness(1);
+WorstF = fitness(end);
+GBestF = fitness(1);
+for i = 1:pop
+    X(i,:) = X0(index(i),:);
+end
+curve=zeros(1,Max_iter);
+GBestX = X(1,:);
+X_new = X;
+for i = 1: Max_iter
+    BestF = fitness(1);
+    WorstF = fitness(end);
+    CurrentF=fitness;
+    R2 = rand(1);
+    w1=0.9;
+    w2=0.4;
+    wm=w1*(w1-w2)*(1-tan((pi*i)/(4*Max_iter))*(i^2/Max_iter^2));%自适应非线性惯性递减权重的策略公式
+    q1=1;
+    q2=3;
+    wz=q1*(q2-q1)*(sin(((CurrentF-BestF)/(WorstF-BestF)+1)*(pi/2)+pi)+1);
+    SDNumber1=0.3*pop-ceil(0.2*pop*(i^2/Max_iter^2));  
+    SDNumber=SDNumber1;
+    for j = 1:PDNumber
+      if(R2<ST)
+          X_new(j,:) = wm*X(j,:).*exp(-j./(rand()*Max_iter));
+      else
+          X_new(j,:) = wz*X(j,:) + randn().*ones(1,dim);
+      end     
+    end
+   for j = PDNumber+1:pop
+        if(j>(pop - PDNumber)/2 + PDNumber)
+          X_new(j,:)= randn(1,dim).*exp((X(end,:) - X(j,:))/j^2);
+        else
+          A = ones(1,dim); 
+          for a = 1:dim
+            if(rand()>0.5)
+                A(a) = -1;
+            end
+          end 
+          AA = A'*inv(A*A'); 
+          if rand<0.5
+              F=-1;
+          else
+              F=1;
+          end
+          XRbest=X(1,:)+F.*randn().*X(1,:);
+          X_new(j,:)= XRbest + abs(X(j,:) - X(1,:)).*AA';
+        end
+        for a = 1: dim
+           if(X_new(j,a)>ub(a))
+               X_new(j,a) =ub(a);
+           end
+           if(X_new(j,a)<lb(a))
+               X_new(j,a) =lb(a);
+           end
+        end
+        X_newBack=ub+lb-rand.*X_new(j,:);
+        Xout=ZJPopulation(X_new(j,:),X_newBack,dim);
+        fitnessTemp=zeros(size(Xout,1),1);
+        for a=1:size(Xout,1)
+            fitnessTemp(a)=fobj(Xout(a,:));
+        end
+        [minFitnessTemp,minIndex]=min(fitnessTemp);
+        if minFitnessTemp<fobj(X_new(j,:))
+            X_new(j,:)=Xout(minIndex,:);
+        end
+   end
+   Temp = randperm(pop);
+   SDchooseIndex = Temp(1:SDNumber); 
+   for j = 1:SDNumber
+       if(fitness(SDchooseIndex(j))>BestF)
+           X_new(SDchooseIndex(j),:) = X(1,:) + wm*randn().*abs(X(SDchooseIndex(j),:) - X(1,:));
+       elseif(fitness(SDchooseIndex(j))== BestF)
+           X_new(SDchooseIndex(j),:) = ub+lb-wm*rand().*X(SDchooseIndex(j),:);
+       end
+   end
+   for j = 1:pop
+       for a = 1: dim
+           if(X_new(j,a)>ub(a))
+               X_new(j,a) =ub(a);
+           end
+           if(X_new(j,a)<lb(a))
+               X_new(j,a) =lb(a);
+           end
+       end
+   end 
+   for j=1:pop
+    fitness_new(j) = fobj(X_new(j,:));
+   end
+   for j = 1:pop
+    if(fitness_new(j) < GBestF)
+       GBestF = fitness_new(j);
+        GBestX = X_new(j,:);   
+    end
+   end
+   X = X_new;
+   fitness = fitness_new;
+   [fitness, index]= sort(fitness);
+   BestF = fitness(1);
+   WorstF = fitness(end);
+   for j = 1:pop
+      X(j,:) = X(index(j),:);
+   end
+   curve(i) = GBestF;
+end
+Best_pos =GBestX;
+Best_score = curve(end);
+end
